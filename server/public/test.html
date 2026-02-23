@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slido API 테스트</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #fff;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #fbbf24;
+      margin-bottom: 2rem;
+    }
+    .section {
+      background: #1e293b;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #334155;
+    }
+    h2 {
+      color: #a3e635;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .input-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.375rem;
+      color: #fff;
+      font-size: 0.875rem;
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    button {
+      background: #fbbf24;
+      color: #0f172a;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 9999px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #f59e0b;
+    }
+    button.secondary {
+      background: #334155;
+      color: #fff;
+      margin-left: 0.5rem;
+    }
+    button.secondary:hover {
+      background: #475569;
+    }
+    .output {
+      background: #0f172a;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-top: 1rem;
+      border: 1px solid #334155;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .sessions-list, .questions-list {
+      margin-top: 1rem;
+    }
+    .item {
+      background: #0f172a;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-bottom: 0.5rem;
+      border: 1px solid #334155;
+    }
+    .item.active {
+      border-color: #fbbf24;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .item-title {
+      font-weight: 600;
+      color: #fff;
+    }
+    .badge {
+      background: #fbbf24;
+      color: #0f172a;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .item-info {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+    .item-actions {
+      margin-top: 0.75rem;
+    }
+    .like-btn {
+      background: transparent;
+      border: 1px solid #fbbf24;
+      color: #fbbf24;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .like-btn.liked {
+      background: #fbbf24;
+      color: #0f172a;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎤 Slido API 테스트</h1>
+
+    <div class="grid">
+      <!-- 관리자 섹션 -->
+      <div>
+        <div class="section">
+          <h2>🔑 관리자 인증</h2>
+          <div class="input-group">
+            <label>접속코드 (서버 콘솔 확인)</label>
+            <input type="text" id="adminCode" placeholder="czy4y7">
+          </div>
+          <button onclick="testAuth()">인증 테스트</button>
+          <div class="output" id="authOutput"></div>
+        </div>
+
+        <div class="section">
+          <h2>➕ 세션 생성</h2>
+          <div class="input-group">
+            <label>세션 제목</label>
+            <input type="text" id="sessionTitle" placeholder="PART 1: AI 시대...">
+          </div>
+          <button onclick="createSession()">세션 생성</button>
+          <div class="output" id="createOutput"></div>
+        </div>
+
+        <div class="section">
+          <h2>📋 세션 목록</h2>
+          <button onclick="loadSessions()">새로고침</button>
+          <div class="sessions-list" id="sessionsList"></div>
+        </div>
+      </div>
+
+      <!-- 참석자 섹션 -->
+      <div>
+        <div class="section">
+          <h2>❓ 질문 제출</h2>
+          <div class="input-group">
+            <label>세션 ID (왼쪽 세션 목록에서 복사)</label>
+            <input type="text" id="questionSessionId" placeholder="세션 ID">
+          </div>
+          <div class="input-group">
+            <label>이름</label>
+            <input type="text" id="authorName" placeholder="홍길동">
+          </div>
+          <div class="input-group">
+            <label>질문 내용</label>
+            <textarea id="questionContent" placeholder="질문을 입력하세요..."></textarea>
+          </div>
+          <div class="input-group">
+            <label>4자리 비밀번호</label>
+            <input type="password" id="questionPassword" placeholder="1234" maxlength="4">
+          </div>
+          <button onclick="submitQuestion()">질문 제출</button>
+          <div class="output" id="questionOutput"></div>
+        </div>
+
+        <div class="section">
+          <h2>💬 질문 목록</h2>
+          <div class="input-group">
+            <label>세션 ID</label>
+            <input type="text" id="viewSessionId" placeholder="세션 ID">
+          </div>
+          <button onclick="loadQuestions()">질문 불러오기</button>
+          <div class="questions-list" id="questionsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    let browserId = localStorage.getItem('browserId');
+    if (!browserId) {
+      browserId = crypto.randomUUID();
+      localStorage.setItem('browserId', browserId);
+    }
+
+    function getAdminCode() {
+      return document.getElementById('adminCode').value.trim();
+    }
+
+    async function testAuth() {
+      const code = getAdminCode();
+      try {
+        const res = await fetch(`${API_BASE}/admin/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        document.getElementById('authOutput').textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById('authOutput').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function createSession() {
+      const title = document.getElementById('sessionTitle').value.trim();
+      if (!title) return alert('세션 제목을 입력하세요');
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/sessions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Code': getAdminCode()
+          },
+          body: JSON.stringify({ title })
+        });
+        const data = await res.json();
+        document.getElementById('createOutput').textContent = JSON.stringify(data, null, 2);
+        loadSessions();
+      } catch (err) {
+        document.getElementById('createOutput').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function loadSessions() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/sessions`, {
+          headers: { 'X-Admin-Code': getAdminCode() }
+        });
+        const sessions = await res.json();
+
+        const html = sessions.map(s => `
+          <div class="item ${s.isActive ? 'active' : ''}">
+            <div class="item-header">
+              <div class="item-title">${s.title}</div>
+              ${s.isActive ? '<span class="badge">현재 세션</span>' : ''}
+            </div>
+            <div class="item-info">
+              ID: ${s.id}<br>
+              질문 수: ${s.questionCount || 0}개
+            </div>
+            <div class="item-actions">
+              ${!s.isActive ? `<button class="secondary" onclick="activateSession('${s.id}')">현재 세션으로 설정</button>` : ''}
+              <button class="secondary" onclick="deleteSession('${s.id}')">삭제</button>
+            </div>
+          </div>
+        `).join('');
+
+        document.getElementById('sessionsList').innerHTML = html || '<div class="item-info">세션이 없습니다</div>';
+      } catch (err) {
+        document.getElementById('sessionsList').innerHTML = 'Error: ' + err.message;
+      }
+    }
+
+    async function activateSession(id) {
+      try {
+        await fetch(`${API_BASE}/admin/sessions/${id}/activate`, {
+          method: 'POST',
+          headers: { 'X-Admin-Code': getAdminCode() }
+        });
+        loadSessions();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteSession(id) {
+      if (!confirm('이 세션을 삭제하시겠습니까?')) return;
+      try {
+        await fetch(`${API_BASE}/admin/sessions/${id}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Code': getAdminCode() }
+        });
+        loadSessions();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function submitQuestion() {
+      const sessionId = document.getElementById('questionSessionId').value.trim();
+      const authorName = document.getElementById('authorName').value.trim();
+      const content = document.getElementById('questionContent').value.trim();
+      const password = document.getElementById('questionPassword').value.trim();
+
+      if (!sessionId || !authorName || !content || !password) {
+        return alert('모든 필드를 입력하세요');
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${sessionId}/questions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ authorName, content, password })
+        });
+        const data = await res.json();
+        document.getElementById('questionOutput').textContent = JSON.stringify(data, null, 2);
+
+        // 자동으로 질문 목록 새로고침
+        document.getElementById('viewSessionId').value = sessionId;
+        loadQuestions();
+      } catch (err) {
+        document.getElementById('questionOutput').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function loadQuestions() {
+      const sessionId = document.getElementById('viewSessionId').value.trim();
+      if (!sessionId) return alert('세션 ID를 입력하세요');
+
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${sessionId}/questions`);
+        const questions = await res.json();
+
+        const likedQuestions = JSON.parse(localStorage.getItem('likedQuestions') || '{}');
+
+        const html = questions.map(q => {
+          const isLiked = likedQuestions[q.id] === true;
+          return `
+            <div class="item">
+              <div class="item-header">
+                <div class="item-title">${q.authorName}</div>
+                <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${q.id}', '${sessionId}')">
+                  👍 ${q.likeCount}
+                </button>
+              </div>
+              <div class="item-info">${q.content}</div>
+              <div class="item-info" style="font-size: 0.75rem; margin-top: 0.5rem;">
+                ${new Date(q.createdAt).toLocaleString('ko-KR')}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        document.getElementById('questionsList').innerHTML = html || '<div class="item-info">질문이 없습니다</div>';
+      } catch (err) {
+        document.getElementById('questionsList').innerHTML = 'Error: ' + err.message;
+      }
+    }
+
+    async function toggleLike(questionId, sessionId) {
+      try {
+        const res = await fetch(`${API_BASE}/questions/${questionId}/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ browserId })
+        });
+        const data = await res.json();
+
+        // localStorage에 좋아요 상태 저장
+        const likedQuestions = JSON.parse(localStorage.getItem('likedQuestions') || '{}');
+        likedQuestions[questionId] = data.liked;
+        localStorage.setItem('likedQuestions', JSON.stringify(likedQuestions));
+
+        loadQuestions();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // 페이지 로드 시 세션 목록 자동 로드
+    window.onload = () => {
+      loadSessions();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Database
+database.db
+*.db
+
+# Build outputs
+client/dist/
+# server/public/ is needed for deployment
+
+# Environment variables
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Vercel
+.vercel
