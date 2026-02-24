@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { Session, Question, QuestionSubmit } from '../types';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: '/api',
 });
 
 // browserId 생성 및 저장
